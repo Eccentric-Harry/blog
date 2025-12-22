@@ -1,0 +1,42 @@
+package com.example.blog.entity;
+
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.Instant;
+
+@Entity
+@Table(name = "posts")
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
+@Builder
+public class BlogPost {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String title;
+
+    @Lob
+    private String content;
+
+    private Instant createdAt;
+    private Instant updatedAt;
+
+    @PrePersist
+    void onCreate(){
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    void onUpdate(){
+        updatedAt = Instant.now();
+    }
+}
