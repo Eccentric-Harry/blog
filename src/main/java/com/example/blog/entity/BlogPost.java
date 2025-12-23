@@ -2,10 +2,7 @@ package com.example.blog.entity;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 
@@ -15,6 +12,8 @@ import java.time.Instant;
 @AllArgsConstructor
 @Data
 @Builder
+@Getter
+@Setter
 public class BlogPost {
 
     @Id

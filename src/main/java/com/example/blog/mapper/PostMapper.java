@@ -15,9 +15,10 @@ public class PostMapper {
 
     public static PostResponseDto toDto(BlogPost entity){
         PostResponseDto responseDto = new PostResponseDto();
-        entity.setTitle(entity.getTitle());
-        entity.setContent(entity.getContent());
-        entity.setCreatedAt(entity.getCreatedAt());
+        responseDto.setId(entity.getId());
+        responseDto.setTitle(entity.getTitle());
+        responseDto.setContent(entity.getContent());
+        responseDto.setCreatedAt(entity.getCreatedAt());
         return responseDto;
     }
 }
