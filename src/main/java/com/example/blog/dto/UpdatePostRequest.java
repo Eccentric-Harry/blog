@@ -20,7 +20,7 @@ public class UpdatePostRequest {
     private String slug;
 
     private String coverImageUrl;
-    //private Integer readTime;
+    private Integer readTime;
 
     private boolean published;
 

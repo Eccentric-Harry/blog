@@ -1,6 +1,5 @@
 package com.example.blog.controller;
 
-import com.example.blog.dto.ImageDto;
 import com.example.blog.entity.Image;
 import com.example.blog.service.ImageService;
 import org.springframework.http.HttpStatus;

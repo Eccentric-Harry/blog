@@ -22,5 +22,5 @@ public class CreatePostRequest {
 
     private String coverImageUrl; // returned by minIo upload
 
-    //private int readTime; // backend should compute this.
+    private Integer readTime; // backend should compute this.
 }
