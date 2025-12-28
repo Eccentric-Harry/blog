@@ -27,6 +27,10 @@ public class BlogPost {
 
     private Instant createdAt;
     private Instant updatedAt;
+    private String slug;
+    private String coverImageUrl;
+    private int readTime;
+
 
     @PrePersist
     void onCreate(){
