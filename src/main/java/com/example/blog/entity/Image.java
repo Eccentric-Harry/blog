@@ -14,11 +14,12 @@ public class Image {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String key;           // S3 object key (UUID.ext)
+    private String key;           // ImageKit file path (e.g., /blog-images/uuid.jpg)
+    private String fileId;        // ImageKit fileId for deletion
     private String originalName;
     private String contentType;
     private Long size;
-    private String url;           // optional (public or presigned)
+    private String url;           // CDN URL from ImageKit
     private Instant uploadedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
