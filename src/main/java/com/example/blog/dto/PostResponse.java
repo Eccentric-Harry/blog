@@ -1,3 +1,4 @@
+// backend: src/main/java/com/example/blog/dto/PostResponse.java
 package com.example.blog.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -19,8 +20,15 @@ public class PostResponse {
     private String title;
     private String slug;
     private String content;
+    private String excerpt;
+    private String author;
     private Integer readTime;
     private String coverImageUrl;
+    private boolean published;
+    private boolean archived;
+
+    private CategoryResponse category;
+    private List<TagResponse> tags;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant createdAt;

@@ -1,21 +1,17 @@
-server:
-  port: 8080
+# Server Configuration
+server.port=${SERVER_PORT:8080}
 
-spring:
-  datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:blog}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASS:postgres}
+# Database Configuration
+spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:blog}
+spring.datasource.username=${DB_USER:postgres}
+spring.datasource.password=${DB_PASS:postgres}
 
-minio:
-  url: ${MINIO_URL:http://localhost:9000}
-  access-key: ${MINIO_ACCESS_KEY:minioadmin}
-  secret-key: ${MINIO_SECRET_KEY:minioadmin}
-  bucket: ${MINIO_BUCKET:blog-images}
-  region: ${MINIO_REGION:us-east-1}
+# ImageKit.io Configuration
+imagekit.public-key=${IMAGEKIT_PUBLIC_KEY:your_public_key}
+imagekit.private-key=${IMAGEKIT_PRIVATE_KEY:your_private_key}
+imagekit.url-endpoint=${IMAGEKIT_URL_ENDPOINT:https://ik.imagekit.io/your_imagekit_id}
 
-app:
-  admin:
-    username: ${ADMIN_USERNAME:admin}
-    password: ${ADMIN_PASSWORD:adminpassword} # store hashed or in env
-  frontend-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
+# App Configuration
+app.admin.username=${ADMIN_USERNAME:admin}
+app.admin.password=${ADMIN_PASSWORD:adminpassword}
+app.frontend-origin=${FRONTEND_ORIGIN:http://localhost:3000}

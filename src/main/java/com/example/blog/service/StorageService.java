@@ -1,68 +1,84 @@
 package com.example.blog.service;
 
-import org.springframework.stereotype.Service;
+import com.example.blog.dto.ImageType;
+import com.example.blog.dto.UploadResult;
+import com.example.blog.exception.StorageException;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
-import java.io.IOException;
 import java.time.Duration;
-import java.util.UUID;
 
-@Service
-public class StorageService {
+/**
+ * Service abstraction for object storage operations.
+ * Implementations may use ImageKit, S3, or other storage backends.
+ */
+public interface StorageService {
 
-    private final S3Client s3;
-    private final S3Presigner presigner;
-    private final String bucket;
+    /**
+     * Uploads a multipart file to object storage with specified image type.
+     *
+     * @param file multipart file from request
+     * @param imageType the type of image (determines storage folder)
+     * @return UploadResult containing the key, fileId, and URL
+     * @throws StorageException when upload fails
+     */
+    UploadResult upload(MultipartFile file, ImageType imageType) throws StorageException;
 
-    public StorageService(S3Client s3, S3Presigner presigner,
-                          @org.springframework.beans.factory.annotation.Value("${storage.bucket}") String bucket) {
-        this.s3 = s3;
-        this.presigner = presigner;
-        this.bucket = bucket;
+    /**
+     * Uploads a multipart file to object storage (defaults to CONTENT type).
+     *
+     * @param file multipart file from request
+     * @return UploadResult containing the key, fileId, and URL
+     * @throws StorageException when upload fails
+     */
+    default UploadResult upload(MultipartFile file) throws StorageException {
+        return upload(file, ImageType.CONTENT);
     }
 
-    public String upload(MultipartFile file) throws IOException {
-        String ext = "";
-        String original = file.getOriginalFilename() == null ? "" : file.getOriginalFilename();
-        int dot = original.lastIndexOf('.');
-        if (dot > -1) ext = original.substring(dot);
+    /**
+     * Generates a presigned PUT URL for direct client upload.
+     *
+     * @param key         desired object key
+     * @param contentType MIME type for the upload
+     * @param validFor    duration for which the URL is valid
+     * @return presigned URL the client can use to upload directly to storage
+     * @throws StorageException when signing fails
+     */
+    String presignPutUrl(String key, String contentType, Duration validFor) throws StorageException;
 
-        String key = UUID.randomUUID().toString() + ext;
+    /**
+     * Generates a presigned GET URL for downloading an object.
+     *
+     * @param key      object key in storage
+     * @param validFor duration for which the URL is valid
+     * @return presigned URL to download the object
+     * @throws StorageException when signing fails
+     */
+    String presignGetUrl(String key, Duration validFor) throws StorageException;
 
-        PutObjectRequest req = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(key)
-                .contentType(file.getContentType())
-                .contentLength(file.getSize())
-                .build();
+    /**
+     * Returns a public/direct URL for the object (if bucket is publicly accessible).
+     *
+     * @param key object key in storage
+     * @return public URL to access the object
+     */
+    String getObjectUrl(String key);
 
-        s3.putObject(req, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-        return key;
-    }
+    /**
+     * Deletes an object from storage.
+     *
+     * @param key object key in storage
+     * @param fileId storage provider's file ID (optional, used by some providers like ImageKit)
+     * @throws StorageException when deletion fails
+     */
+    void delete(String key, String fileId) throws StorageException;
 
-    public String presignPutUrl(String key, String contentType, Duration validFor) {
-        PutObjectRequest req = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(key)
-                .contentType(contentType)
-                .build();
-
-        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                .putObjectRequest(req)
-                .signatureDuration(validFor)
-                .build();
-
-        return presigner.presignPutObject(presignRequest).url().toString();
-    }
-
-    public String getObjectUrl(String key) {
-        // For MinIO dev, you can expose public read; or better, presign GET if private.
-        // Example public path: http://localhost:9000/<bucket>/<key>
-        return String.format("%s/%s/%s", "http://localhost:9000", bucket, key);
-    }
+    /**
+     * Checks if an object exists in storage.
+     *
+     * @param key object key to check
+     * @return true if the object exists, false otherwise
+     * @throws StorageException when the check fails
+     */
+    boolean exists(String key) throws StorageException;
 }
+

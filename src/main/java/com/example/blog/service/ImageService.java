@@ -1,56 +1,106 @@
 package com.example.blog.service;
 
-import com.example.blog.entity.BlogPost;
+import com.example.blog.dto.ImageResponse;
+import com.example.blog.dto.ImageType;
 import com.example.blog.entity.Image;
-import com.example.blog.repository.BlogPostRepository;
-import com.example.blog.repository.ImageRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.example.blog.exception.InvalidFileException;
+import com.example.blog.exception.ResourceNotFoundException;
+import com.example.blog.exception.StorageException;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 
-@Service
-public class ImageService {
-    private final StorageService storage;
-    private final ImageRepository imageRepo;
-    private final BlogPostRepository postRepo;
+/**
+ * Service abstraction for image storage and metadata management.
+ * Implementations may store binary data in object storage (MinIO, S3, etc.)
+ * and persist metadata to a database.
+ */
+public interface ImageService {
 
-    public ImageService(StorageService storage, ImageRepository imageRepo, BlogPostRepository postRepo) {
-        this.storage = storage;
-        this.imageRepo = imageRepo;
-        this.postRepo = postRepo;
+    /**
+     * Uploads a multipart file to object storage and persists metadata.
+     *
+     * @param file multipart file from request
+     * @param imageType the type of image (COVER or CONTENT)
+     * @return an ImageResponse containing metadata and a public or presigned URL
+     * @throws InvalidFileException when the file is invalid (empty, wrong type)
+     * @throws StorageException when upload to storage fails
+     */
+    ImageResponse upload(MultipartFile file, ImageType imageType) throws InvalidFileException, StorageException;
+
+    /**
+     * Uploads a multipart file to object storage (defaults to CONTENT type).
+     *
+     * @param file multipart file from request
+     * @return an ImageResponse containing metadata and a public or presigned URL
+     * @throws InvalidFileException when the file is invalid (empty, wrong type)
+     * @throws StorageException when upload to storage fails
+     */
+    default ImageResponse upload(MultipartFile file) throws InvalidFileException, StorageException {
+        return upload(file, ImageType.CONTENT);
     }
 
-    @Transactional
-    public Image uploadForPost(Long postId, MultipartFile file) throws IOException {
-        // Basic validation
-        if (file.isEmpty()) throw new IllegalArgumentException("Empty file");
-        String ct = file.getContentType();
-        if (ct == null || !ct.startsWith("image/")) throw new IllegalArgumentException("File must be an image");
+    /**
+     * Generates a presigned GET URL for the given object key.
+     *
+     * @param objectKey object key in storage (e.g. "images/<uuid>.jpg")
+     * @param expirySeconds expiry in seconds for the presigned URL
+     * @return presigned URL to download the object
+     * @throws ResourceNotFoundException if the objectKey is not found
+     * @throws StorageException for other storage-related errors
+     */
+    String getPresignedUrl(String objectKey, int expirySeconds)
+            throws ResourceNotFoundException, StorageException;
 
-        BlogPost post = postRepo.findById(postId).orElseThrow(() -> new IllegalArgumentException("Post not found"));
+    /**
+     * Generates a presigned PUT/POST URL for direct client upload (optional).
+     *
+     * @param objectKey desired object key
+     * @param expirySeconds expiry in seconds for the presigned upload URL
+     * @return presigned URL the client can use to upload directly to storage
+     * @throws StorageException when signing fails
+     */
+    String getPresignedUploadUrl(String objectKey, int expirySeconds) throws StorageException;
 
-        String key = storage.upload(file);
-        Image image = new Image();
-        image.setKey(key);
-        image.setOriginalName(file.getOriginalFilename());
-        image.setContentType(ct);
-        image.setSize(file.getSize());
-        image.setUrl(storage.getObjectUrl(key));
-        image.setPost(post);
+    /**
+     * Delete an object from storage and remove its metadata record (if present).
+     *
+     * @param objectKey object key in storage
+     * @throws ResourceNotFoundException if metadata or object is not found
+     * @throws StorageException on storage deletion errors
+     */
+    void deleteByObjectKey(String objectKey) throws ResourceNotFoundException, StorageException;
 
-        return imageRepo.save(image);
-    }
+    /**
+     * Persist a metadata-only Image record (useful if you want separate creation).
+     *
+     * @param image entity to persist
+     * @return persisted Image (with id)
+     */
+    Image saveMetadata(Image image);
 
-    // Optionally: method to get presigned PUT URL (for direct client upload)
-    public String createPresignedUploadKey(String originalName, String contentType) {
-        String ext = "";
-        int dot = originalName == null ? -1 : originalName.lastIndexOf('.');
-        if (dot > -1) ext = originalName.substring(dot);
-        String key = java.util.UUID.randomUUID().toString() + ext;
-        // presign for 10 minutes
-        return storage.presignPutUrl(key, contentType, java.time.Duration.ofMinutes(10));
-    }
+    /**
+     * Find persisted image metadata by database id.
+     *
+     * @param id database id
+     * @return ImageResponse with metadata and (optionally) a URL
+     * @throws ResourceNotFoundException if not present
+     */
+    ImageResponse getById(Long id) throws ResourceNotFoundException;
+
+    /**
+     * Try to find image metadata by object key.
+     *
+     * @param objectKey storage object key
+     * @return optional ImageResponse
+     */
+    Optional<ImageResponse> findByObjectKey(String objectKey);
+
+    /**
+     * List all stored image metadata entries (pageable overloads can be added if needed).
+     *
+     * @return list of ImageResponse
+     */
+    List<ImageResponse> listAll();
 }
-
