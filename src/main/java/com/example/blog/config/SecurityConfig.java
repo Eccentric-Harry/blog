@@ -38,7 +38,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/health", "/actuator/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/login").permitAll()
+                .requestMatchers("/api/auth/me").authenticated()
+                // Registration is disabled - no public signup allowed
+                .requestMatchers("/api/auth/register").denyAll()
+                // One-time admin setup (protected by secret key in controller)
+                .requestMatchers("/api/setup/**").permitAll()
                 .requestMatchers("/api/imagekit/auth").permitAll()
                 // Public read access to posts, tags, categories
                 .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
