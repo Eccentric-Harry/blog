@@ -75,7 +75,17 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
     );
 
     /**
-     * Get recently updated published posts.
+     * Get recently updated published posts (excludes archived).
+     */
+    @Query("""
+        SELECT p FROM BlogPost p
+        WHERE p.published = true AND p.archived = false
+        ORDER BY p.updatedAt DESC
+        """)
+    List<BlogPost> findRecentlyUpdatedNonArchived(Pageable pageable);
+
+    /**
+     * Get recently updated published posts (includes archived).
      */
     @Query("""
         SELECT p FROM BlogPost p
@@ -83,6 +93,19 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
         ORDER BY p.updatedAt DESC
         """)
     List<BlogPost> findRecentlyUpdated(Pageable pageable);
+
+    /**
+     * Search published posts by title or content (case insensitive, excludes archived).
+     * Uses native query because JPQL LOWER() doesn't work with TEXT/CLOB columns in Hibernate 6.
+     */
+    @Query(value = """
+        SELECT * FROM posts p
+        WHERE p.published = true AND p.archived = false
+        AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%'))
+             OR LOWER(CAST(p.content AS TEXT)) LIKE LOWER(CONCAT('%', :query, '%')))
+        ORDER BY p.created_at DESC
+        """, nativeQuery = true)
+    Page<BlogPost> searchPublishedNonArchived(@Param("query") String query, Pageable pageable);
 
     /**
      * Search published posts by title or content (case insensitive).

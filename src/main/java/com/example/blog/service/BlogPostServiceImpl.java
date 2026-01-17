@@ -122,7 +122,7 @@ public class BlogPostServiceImpl implements BlogPostService {
     @Override
     @Transactional
     public Page<PostSummaryResponse> findAllPublished(Pageable pageable) {
-        return blogPostRepository.findByPublishedTrueOrderByCreatedAtDesc(pageable)
+        return blogPostRepository.findByPublishedTrueAndArchivedFalseOrderByCreatedAtDesc(pageable)
                 .map(BlogPostMapper::toSummary);
     }
 
@@ -150,7 +150,7 @@ public class BlogPostServiceImpl implements BlogPostService {
     @Override
     @Transactional
     public Page<PostSummaryResponse> search(String query, Pageable pageable) {
-        return blogPostRepository.searchPublished(query, pageable)
+        return blogPostRepository.searchPublishedNonArchived(query, pageable)
                 .map(BlogPostMapper::toSummary);
     }
 
@@ -158,7 +158,7 @@ public class BlogPostServiceImpl implements BlogPostService {
     @Transactional
     public List<PostSummaryResponse> findRecentlyUpdated(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
-        return blogPostRepository.findRecentlyUpdated(pageable).stream()
+        return blogPostRepository.findRecentlyUpdatedNonArchived(pageable).stream()
                 .map(BlogPostMapper::toSummary)
                 .collect(Collectors.toList());
     }
@@ -205,7 +205,8 @@ public class BlogPostServiceImpl implements BlogPostService {
     public List<CategoryResponse> getAllCategories() {
         return categoryRepository.findAll().stream()
                 .map(category -> {
-                    long postCount = blogPostRepository.findByPublishedTrueAndArchivedFalseOrderByCreatedAtDesc(PageRequest.of(0, Integer.MAX_VALUE))
+                    // Include archived posts so categories remain visible when posts are archived
+                    long postCount = blogPostRepository.findByPublishedTrueOrderByCreatedAtDesc(PageRequest.of(0, Integer.MAX_VALUE))
                             .stream()
                             .filter(post -> post.getCategory() != null && post.getCategory().getId().equals(category.getId()))
                             .count();
@@ -225,8 +226,9 @@ public class BlogPostServiceImpl implements BlogPostService {
     public List<TagResponse> getAllTags() {
         return tagRepository.findAll().stream()
                 .map(tag -> {
+                    // Include archived posts so tags remain visible when posts are archived
                     long postCount = tag.getPosts().stream()
-                            .filter(post -> post.isPublished() && !post.isArchived())
+                            .filter(post -> post.isPublished())
                             .count();
                     return TagResponse.builder()
                             .id(tag.getId())
