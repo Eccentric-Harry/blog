@@ -58,9 +58,6 @@ ENV JAVA_OPTS="-XX:+UseContainerSupport \
                -XX:+ExitOnOutOfMemoryError \
                -Djava.security.egd=file:/dev/./urandom"
 
-# Health check for container orchestration
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD wget -qO- http://localhost:${PORT}/health || exit 1
 
 # Start the application
 # Cloud Run provides PORT env var, Spring Boot uses server.port
