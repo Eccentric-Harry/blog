@@ -50,6 +50,8 @@ steps:
       - '2'
       - '--set-env-vars'
       - 'SPRING_PROFILES_ACTIVE=prod'
+      - '--set-env-vars'
+      - '^@^ALLOWED_ORIGINS=https://harrysblog.vercel.app,http://localhost:5173'
 
 # Store images in Container Registry
 images:
@@ -58,7 +60,7 @@ images:
 
 # Substitution variables (override with --substitutions)
 substitutions:
-  _REGION: 'us-central1'
+  _REGION: 'asia-south1'
 
 # Build timeout
 timeout: '1200s'
