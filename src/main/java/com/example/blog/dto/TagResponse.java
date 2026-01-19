@@ -1,4 +1,3 @@
-// backend: src/main/java/com/example/blog/dto/TagResponse.java
 package com.example.blog.dto;
 
 import lombok.AllArgsConstructor;
