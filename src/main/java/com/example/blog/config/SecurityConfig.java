@@ -49,6 +49,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/tags/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                // Visitor tracking - public endpoints
+                .requestMatchers("/api/visitors/**").permitAll()
                 // Admin-only write operations on posts
                 .requestMatchers(HttpMethod.POST, "/api/posts/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasRole("ADMIN")

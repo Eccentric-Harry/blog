@@ -20,3 +20,15 @@ ALTER TABLE IF EXISTS posts
 -- Optional index used by queries filtering archived.
 CREATE INDEX IF NOT EXISTS idx_posts_archived ON posts(archived);
 
+-- Site stats table for visitor counting
+CREATE TABLE IF NOT EXISTS site_stats (
+    id BIGINT PRIMARY KEY,
+    total_visitors BIGINT NOT NULL DEFAULT 0,
+    last_updated TIMESTAMP
+);
+
+-- Initialize the global stats row if it doesn't exist
+INSERT INTO site_stats (id, total_visitors, last_updated)
+VALUES (1, 0, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;
+
