@@ -14,7 +14,7 @@ import java.util.Arrays;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${ALLOWED_ORIGINS:http://localhost:5173}")
+    @Value("${ALLOWED_ORIGINS:http://localhost:5173,https://harrysblog.vercel.app}")
     private String allowedOrigins;
 
     @Override

@@ -1,64 +1,27 @@
-# ===========================================
-# DOCKERFILE FOR GOOGLE CLOUD RUN
-# Multi-stage build for Spring Boot application
-# ===========================================
+# ---------- BUILD STAGE ----------
+FROM maven:3.9.6-eclipse-temurin-21 AS builder
 
-# Stage 1: Build the application
-FROM eclipse-temurin:21-jdk-alpine AS builder
-
-WORKDIR /app
-
-# Copy Maven wrapper and pom.xml first (for better layer caching)
-COPY mvnw .
-COPY .mvn .mvn
+WORKDIR /workspace
 COPY pom.xml .
+RUN mvn -B -q dependency:go-offline
 
-# Make Maven wrapper executable
-RUN chmod +x mvnw
+COPY src ./src
+RUN mvn -DskipTests package
 
-# Download dependencies (cached layer)
-RUN ./mvnw dependency:go-offline -B
 
-# Copy source code
-COPY src src
-
-# Build the application (skip tests for faster builds)
-RUN ./mvnw package -DskipTests -B
-
-# Stage 2: Create the runtime image
-FROM eclipse-temurin:21-jre-alpine AS runtime
+# ---------- RUNTIME STAGE ----------
+FROM eclipse-temurin:21-jre-jammy
 
 WORKDIR /app
+COPY --from=builder /workspace/target/*.jar app.jar
 
-# Add non-root user for security
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
+# Optimized JVM flags for Cloud Run + Spring Boot
+ENV JAVA_TOOL_OPTIONS="\
+-XX:+UseG1GC \
+-XX:MaxRAMPercentage=75.0 \
+-XX:InitialRAMPercentage=50.0 \
+-Xss256k \
+-Djava.security.egd=file:/dev/./urandom"
 
-# Copy the JAR from builder stage
-COPY --from=builder /app/target/*.jar app.jar
-
-# Change ownership to non-root user
-RUN chown -R appuser:appgroup /app
-
-# Switch to non-root user
-USER appuser
-
-# Cloud Run sets PORT environment variable (default 8080)
-ENV PORT=8080
-
-# Expose the port
-EXPOSE ${PORT}
-
-# JVM options optimized for containers and Cloud Run
-# - UseContainerSupport: Respect container memory limits
-# - MaxRAMPercentage: Use 75% of available memory for heap
-# - +ExitOnOutOfMemoryError: Restart container on OOM
-ENV JAVA_OPTS="-XX:+UseContainerSupport \
-               -XX:MaxRAMPercentage=75.0 \
-               -XX:+ExitOnOutOfMemoryError \
-               -Djava.security.egd=file:/dev/./urandom"
-
-
-# Start the application
-# Cloud Run provides PORT env var, Spring Boot uses server.port
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -Dserver.port=${PORT} -jar app.jar"]
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/app/app.jar"]
