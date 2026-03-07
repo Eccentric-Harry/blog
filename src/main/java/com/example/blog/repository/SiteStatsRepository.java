@@ -16,5 +16,5 @@ public interface SiteStatsRepository extends JpaRepository<SiteStats, Long> {
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE SiteStats s SET s.totalVisitors = s.totalVisitors + 1, s.lastUpdated = CURRENT_TIMESTAMP WHERE s.id = :id")
-    int incrementVisitorCount(@Param("id") Long id);
+    void incrementVisitorCount(@Param("id") Long id);
 }
