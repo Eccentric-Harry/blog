@@ -88,13 +88,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleAll(Exception ex, HttpServletRequest req) {
         log.error("Unhandled exception", ex);
-        // Include exception details for debugging (TODO: remove before final production)
-        String debugMessage = ex.getClass().getSimpleName() + ": " + ex.getMessage();
-        if (ex.getCause() != null) {
-            debugMessage += " | Caused by: " + ex.getCause().getClass().getSimpleName() + ": " + ex.getCause().getMessage();
-        }
         ApiError err = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error",
-                debugMessage, req.getRequestURI());
+                "An unexpected error occurred. Please try again later.", req.getRequestURI());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
     }
 }
