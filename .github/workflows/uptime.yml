@@ -1,0 +1,15 @@
+name: Uptime Keep-Alive
+
+on:
+  schedule:
+    # Run every 10 minutes to keep Cloud Run container warm and prevent cold starts
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions UI
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Health Endpoint
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" https://blog-backend-yikvxn6zyq-el.a.run.app/health
