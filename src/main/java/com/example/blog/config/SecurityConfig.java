@@ -37,7 +37,7 @@ public class SecurityConfig {
             .cors(cors -> {}) // Use WebConfig CORS settings
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/health", "/actuator/**").permitAll()
+                .requestMatchers("/", "/health", "/actuator/**").permitAll()
                 // Swagger UI endpoints
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                 .requestMatchers("/api/auth/login").permitAll()
